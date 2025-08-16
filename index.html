@@ -1,0 +1,1357 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Генератор карточек D&D</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <style>
+        body {
+            font-family: 'Times New Roman', serif;
+            background-color: #f0e6d2;
+            color: #3a2c1a;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-image: url('https://i.imgur.com/ZLJdWQa.jpg');
+            background-size: cover;
+            background-attachment: fixed;
+        }
+        
+        h1, h2, h3 {
+            color: #5c3c10;
+            text-align: center;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.3);
+        }
+        
+        h1 {
+            font-size: 2.5em;
+            margin-bottom: 30px;
+            border-bottom: 2px solid #5c3c10;
+            padding-bottom: 10px;
+        }
+        
+        .container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+            justify-content: center;
+        }
+        
+        .form-section {
+            background-color: rgba(255, 248, 240, 0.9);
+            border-radius: 8px;
+            padding: 25px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+            flex: 1;
+            min-width: 320px;
+            border: 1px solid #c9b18b;
+            position: relative;
+        }
+        
+        .card-preview {
+            background-color: rgba(255, 248, 240, 0.95);
+            border-radius: 8px;
+            padding: 25px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+            width: 420px;
+            min-height: 500px;
+            position: relative;
+            border: 2px solid #8b5a2b;
+        }
+        
+        .card-content {
+            height: 100%;
+        }
+        
+        label {
+            display: block;
+            margin: 12px 0 6px;
+            font-weight: bold;
+            color: #5c3c10;
+        }
+        
+        input, select, textarea {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #c9b18b;
+            border-radius: 5px;
+            box-sizing: border-box;
+            background-color: #fffaf0;
+            font-family: inherit;
+        }
+        
+        button {
+            background-color: #8b5a2b;
+            color: #fff8f0;
+            border: none;
+            padding: 12px 18px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 18px;
+            margin-top: 15px;
+            font-weight: bold;
+            transition: background-color 0.3s;
+        }
+        
+        button:hover {
+            background-color: #a07850;
+        }
+        
+        .abilities-section {
+            margin-top: 25px;
+            border-top: 1px dashed #8b5a2b;
+            padding-top: 15px;
+        }
+        
+        .ability-select {
+            margin-bottom: 15px;
+        }
+        
+        .ability-option {
+            margin-bottom: 8px;
+            padding: 8px;
+            background-color: rgba(255, 248, 240, 0.7);
+            border-radius: 5px;
+            border-left: 3px solid #8b5a2b;
+        }
+        
+        .ability-option:hover {
+            background-color: rgba(255, 248, 240, 0.9);
+        }
+        
+        .character-name {
+            font-size: 28px;
+            font-weight: bold;
+            text-align: center;
+            margin-bottom: 10px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #8b5a2b;
+            color: #5c3c10;
+        }
+        
+        .character-race {
+            font-style: italic;
+            text-align: center;
+            margin-bottom: 20px;
+            color: #7d5c3c;
+        }
+        
+        .abilities-list {
+            margin-top: 20px;
+        }
+        
+        .ability-category {
+            margin-top: 15px;
+            font-weight: bold;
+            color: #8b5a2b;
+            border-bottom: 1px solid #c9b18b;
+            padding-bottom: 5px;
+        }
+        
+        .ability-item {
+            margin-left: 15px;
+            margin-bottom: 8px;
+            padding-left: 10px;
+            border-left: 2px solid #c9b18b;
+        }
+        
+        .hidden {
+            display: none;
+        }
+        
+        .race-description {
+            font-style: italic;
+            color: #7d5c3c;
+            margin-bottom: 15px;
+            padding: 8px;
+            background-color: rgba(139, 90, 43, 0.1);
+            border-radius: 5px;
+        }
+        
+        .form-header {
+            color: #5c3c10;
+            border-bottom: 1px solid #8b5a2b;
+            padding-bottom: 5px;
+            margin-bottom: 15px;
+        }
+        
+        .limit-reached {
+            color: #a52a2a;
+            font-style: italic;
+            font-size: 0.9em;
+        }
+        
+        .inventory-section {
+            margin-top: 20px;
+            border-top: 1px dashed #8b5a2b;
+            padding-top: 15px;
+        }
+        
+        .export-buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+        }
+        
+        .export-buttons button {
+            flex: 1;
+        }
+        
+        #savePNG {
+            background-color: #4a6b8a;
+        }
+        
+        #savePNG:hover {
+            background-color: #5a7b9a;
+        }
+        
+        #savePDF {
+            background-color: #8a4a4a;
+        }
+        
+        #savePDF:hover {
+            background-color: #9a5a5a;
+        }
+        
+        .nav-buttons {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 20px;
+        }
+        
+        .nav-button {
+            width: 48%;
+        }
+        
+        .ability-button {
+            width: 100%;
+            margin-bottom: 8px;
+            text-align: left;
+            padding: 10px;
+            background-color: rgba(139, 90, 43, 0.1);
+            border: 1px solid #8b5a2b;
+            color: #3a2c1a;
+        }
+        
+        .ability-button.selected {
+            background-color: #8b5a2b;
+            color: #fff8f0;
+        }
+        
+        .ability-button.limit-reached:not(.selected) {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        
+        .creation-step {
+            display: none;
+        }
+        
+        .creation-step.active {
+            display: block;
+        }
+        
+        .step-indicator {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+        
+        .step {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            background-color: #c9b18b;
+            color: #5c3c10;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 5px;
+            font-weight: bold;
+            cursor: pointer;
+            flex-shrink: 0;
+        }
+        
+        .step.active {
+            background-color: #8b5a2b;
+            color: #fff8f0;
+        }
+        
+        .step.completed {
+            background-color: #5a7b9a;
+            color: #fff8f0;
+        }
+        
+        .item-selector {
+            margin-bottom: 15px;
+        }
+        
+        .item-button {
+            width: 100%;
+            margin-bottom: 8px;
+            text-align: left;
+            padding: 10px;
+            background-color: rgba(139, 90, 43, 0.1);
+            border: 1px solid #8b5a2b;
+            color: #3a2c1a;
+            cursor: pointer;
+        }
+        
+        .item-button:hover {
+            background-color: rgba(139, 90, 43, 0.2);
+        }
+        
+        .item-button.selected {
+            background-color: #8b5a2b;
+            color: #fff8f0;
+        }
+        
+        .item-description {
+            font-size: 0.9em;
+            color: #5c3c10;
+            margin-top: 5px;
+            padding: 5px;
+            background-color: rgba(255, 248, 240, 0.7);
+            border-radius: 3px;
+            display: none;
+        }
+        
+        .item-button.selected + .item-description {
+            display: block;
+        }
+        
+        @media print {
+            body {
+                background: none;
+                padding: 0;
+            }
+            .form-section, button {
+                display: none;
+            }
+            .card-preview {
+                width: 100%;
+                height: auto;
+                box-shadow: none;
+                border: none;
+                padding: 0;
+                margin: 0;
+                page-break-after: always;
+            }
+        }
+    </style>
+</head>
+<body>
+    <h1>Генератор карточек персонажей D&D</h1>
+    
+    <div class="step-indicator">
+        <div class="step active" data-step="1">1</div>
+        <div class="step" data-step="2">2</div>
+        <div class="step" data-step="3">3</div>
+        <div class="step" data-step="4">4</div>
+        <div class="step" data-step="5">5</div>
+    </div>
+    
+    <div class="container">
+        <div class="form-section">
+            <!-- Шаг 1: Информация о персонаже -->
+            <div id="step1" class="creation-step active">
+                <h2 class="form-header">Информация о персонаже</h2>
+                
+                <label for="characterName">Имя персонажа:</label>
+                <input type="text" id="characterName" placeholder="Введите имя персонажа">
+                
+                <label for="characterRace">Раса:</label>
+                <select id="characterRace">
+                    <option value="elf">Эльф</option>
+                    <option value="dwarf">Дворф</option>
+                    <option value="orc">Орк</option>
+                    <option value="human">Человек</option>
+                </select>
+                
+                <div id="elfDescription" class="race-description">
+                    Грациозные и магические существа, связанные с природой, с острыми чувствами и долгой жизнью.
+                </div>
+                <div id="dwarfDescription" class="race-description hidden">
+                    Крепкие и выносливые существа, отличные ремесленники и воины, любят горное дело и эль.
+                </div>
+                <div id="orcDescription" class="race-description hidden">
+                    Сильные и свирепые воины, ценящие силу и честь, с зелёной кожей и клыками.
+                </div>
+                <div id="humanDescription" class="race-description hidden">
+                    Адаптивные и амбициозные, люди - самая разнообразная и распространённая раса.
+                </div>
+                
+                <label for="characterBackground">История персонажа:</label>
+                <textarea id="characterBackground" rows="4" placeholder="Расскажите о вашем персонаже..."></textarea>
+                
+                <div class="nav-buttons">
+                    <button class="nav-button" id="nextToStep2">Далее →</button>
+                </div>
+            </div>
+            
+            <!-- Шаг 2: Способности -->
+            <div id="step2" class="creation-step">
+                <h2 class="form-header">Способности</h2>
+                
+                <h3>Атакующие способности (выберите 2)</h3>
+                <div id="attackingAbilities" class="ability-select">
+                    <!-- Заполнится JavaScript -->
+                </div>
+                <div id="attackingLimit" class="limit-reached hidden">Достигнут лимит (2 способности)</div>
+                
+                <h3>Защитные способности (выберите 1)</h3>
+                <div id="defensiveAbilities" class="ability-select">
+                    <!-- Заполнится JavaScript -->
+                </div>
+                <div id="defensiveLimit" class="limit-reached hidden">Достигнут лимит (1 способность)</div>
+                
+                <h3>Лечащие способности (выберите 1)</h3>
+                <div id="healingAbilities" class="ability-select">
+                    <!-- Заполнится JavaScript -->
+                </div>
+                <div id="healingLimit" class="limit-reached hidden">Достигнут лимит (1 способность)</div>
+                
+                <div class="nav-buttons">
+                    <button class="nav-button" id="backToStep1">← Назад</button>
+                    <button class="nav-button" id="nextToStep3">Далее →</button>
+                </div>
+            </div>
+            
+            <!-- Шаг 3: Броня -->
+            <div id="step3" class="creation-step">
+                <h2 class="form-header">Броня</h2>
+                <h3>Выберите 1 вариант брони</h3>
+                <div id="armorSelection" class="item-selector">
+                    <!-- Заполнится JavaScript -->
+                </div>
+                
+                <div class="nav-buttons">
+                    <button class="nav-button" id="backToStep2">← Назад</button>
+                    <button class="nav-button" id="nextToStep4">Далее →</button>
+                </div>
+            </div>
+            
+            <!-- Шаг 4: Оружие -->
+            <div id="step4" class="creation-step">
+                <h2 class="form-header">Оружие</h2>
+                <h3>Выберите 1 вид оружия</h3>
+                <div id="weaponSelection" class="item-selector">
+                    <!-- Заполнится JavaScript -->
+                </div>
+                
+                <div class="nav-buttons">
+                    <button class="nav-button" id="backToStep3">← Назад</button>
+                    <button class="nav-button" id="nextToStep5">Далее →</button>
+                </div>
+            </div>
+            
+            <!-- Шаг 5: Предметы -->
+            <div id="step5" class="creation-step">
+                <h2 class="form-header">Предметы</h2>
+                <h3>Выберите 3 предмета</h3>
+                <div id="itemSelection" class="item-selector">
+                    <!-- Заполнится JavaScript -->
+                </div>
+                <div id="itemLimit" class="limit-reached hidden">Достигнут лимит (3 предмета)</div>
+                
+                <div class="nav-buttons">
+                    <button class="nav-button" id="backToStep4">← Назад</button>
+                    <button class="nav-button" id="generateCard">Создать карточку</button>
+                </div>
+                
+                <div class="export-buttons">
+                    <button id="savePNG" style="display: none;">Сохранить PNG</button>
+                    <button id="savePDF" style="display: none;">Сохранить PDF</button>
+                </div>
+            </div>
+        </div>
+        
+        <div class="card-preview">
+            <div class="card-content" id="cardContent">
+                <div class="character-name" id="previewName">Имя персонажа</div>
+                <div class="character-race" id="previewRace">Эльф</div>
+                
+                <div id="previewBackground" style="margin-top: 15px; font-style: italic;">
+                    История персонажа не указана.
+                </div>
+                
+                <div class="abilities-list">
+                    <div class="ability-category">Атакующие способности:</div>
+                    <div id="previewAttackingAbilities">
+                        <div class="ability-item">Не выбраны</div>
+                    </div>
+                    
+                    <div class="ability-category">Защитные способности:</div>
+                    <div id="previewDefensiveAbilities">
+                        <div class="ability-item">Не выбраны</div>
+                    </div>
+                    
+                    <div class="ability-category">Лечащие способности:</div>
+                    <div id="previewHealingAbilities">
+                        <div class="ability-item">Не выбраны</div>
+                    </div>
+                    
+                    <div class="ability-category">Броня:</div>
+                    <div id="previewArmor">
+                        <div class="ability-item">Не указана</div>
+                    </div>
+                    
+                    <div class="ability-category">Оружие:</div>
+                    <div id="previewWeapons">
+                        <div class="ability-item">Не указано</div>
+                    </div>
+                    
+                    <div class="ability-category">Предметы:</div>
+                    <div id="previewItems">
+                        <div class="ability-item">Пусто</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // Описания рас
+        document.getElementById('characterRace').addEventListener('change', function() {
+            const race = this.value;
+            document.querySelectorAll('.race-description').forEach(el => el.classList.add('hidden'));
+            document.getElementById(`${race}Description`).classList.remove('hidden');
+            updateAbilitySelects();
+        });
+        
+        // Данные способностей
+        const abilities = {
+            elf: {
+                attacking: [
+                    "Лук тысячи шипов – выпускает стрелу, которая в полёте размножается в сотню копий",
+                    "Проклятие вечного танца – враг начинает неконтролируемо танцевать",
+                    "Сонный порошок фей – облако пыльцы усыпляет врагов, но они видят кошмары",
+                    "Оживший лес – деревья хватают врагов ветвями и бьют ими о землю",
+                    "Превращение в вино – один противник превращается в бутылку эльфийского вина (можно выпить для восстановления маны)"
+                ],
+                defensive: [
+                    "Плащ из листьев – уклонение +100%, но если подожгут – герой горит",
+                    "Зеркальная иллюзия – создаёт копию, которая принимает один удар",
+                    "Древний щит – блокирует всё, но если разобьётся – эльф впадает в депрессию",
+                    "Бесконечный сон – враги засыпают, но могут проснуться от громкого звука",
+                    "Запретный стих – читает стихотворение, от которого у врагов болит голова (-50% к атаке)"
+                ],
+                healing: [
+                    "Целебный нектар – лечит, но может вызвать опьянение",
+                    "Объятие древнего духа – восстанавливает HP, но герой начинает говорить стихами",
+                    "Фейская пыль – лечит раны, но может случайно уменьшить цель",
+                    "Песня луны – медленная регенерация, но если прервать – эффект исчезает",
+                    "Перерождение – если герой умрёт в ближайший ход, он воскреснет (но без снаряжения)"
+                ]
+            },
+            dwarf: {
+                attacking: [
+                    "Бочка с порохом – выкатывает бочку, которая взрывается при ударе",
+                    "Каменный кулак – рука превращается в камень, удваивая урон, но замедляя героя",
+                    "Проклятие бороды – у врага мгновенно отрастает борода, мешающая видеть",
+                    "Молот правосудия – если враг лжёт, урон удваивается",
+                    "Вдохнуть пиво – выдохнуть огонь – превращает выпитое пиво в огненное дыхание"
+                ],
+                defensive: [
+                    "Каменная стойка – становится статуей (неуязвим, но не может двигаться)",
+                    "Броня из грибов – поглощает урон, но может внезапно вырасти",
+                    "Запрет на магию – кричит 'Здесь только хардкор!', блокируя заклинания",
+                    "Пивной щит – выливает пиво перед собой, создавая скользкую лужу",
+                    "Рунический отскок – 30% шанс, что урон вернётся к атакующему"
+                ],
+                healing: [
+                    "Пивная капельница – вливает пиво прямо в вену (+HP, но возможна кома)",
+                    "Руническое тату – временно даёт +50 HP, но потом болит",
+                    "Каменное сердце – иммунитет к ядам, но -20% к ловкости",
+                    "Грибное зелье – лечит, но возможны галлюцинации",
+                    "Кузнечный нахлёст – заклёпывает рану молотом на горячо (больно, но эффективно)"
+                ]
+            },
+            orc: {
+                attacking: [
+                    "Удар головой – настолько сильный, что у самого орка на секунду кружится голова",
+                    "Съесть врага – откусывает кусок противника, восстанавливая здоровье",
+                    "Бросок гоблина – если рядом есть гоблин, орк кидает его во врага",
+                    "Крик 'ВААААГХ!' – оглушает всех вокруг, включая союзников",
+                    "Разозлиться настолько, что взорваться – орк умирает, но наносит огромный урон всем вокруг"
+                ],
+                defensive: [
+                    "Кожа как у тролля – регенерирует, но становится глупее",
+                    "Поймать стрелу зубами – если повезёт, можно выплюнуть её обратно",
+                    "Прикрыться гоблином – использует гоблина как живой щит",
+                    "Орочья стойкость – игнорирует боль, но потом падает без сил",
+                    "Крик 'МЕНЯ НЕ ВОЗЬМЁШЬ!' – +50% к защите, но все враги теперь бьют только в него"
+                ],
+                healing: [
+                    "Выпить зелье и не умереть – 50% шанс вылечиться или отравиться",
+                    "Зашить рану верёвкой – +HP, но при движении теряется кровь",
+                    "Зелёная регенерация – медленно лечит, но требует есть сырое мясо",
+                    "Орочья медицина – бьёт товарища по голове, чтобы 'перезапустить' его",
+                    "Крик 'Я ЖИВУЧИЙ!' – временно даёт +100 HP, но потом -50"
+                ]
+            },
+            human: {
+                attacking: [
+                    "Ярость толпы – временно призывает 3-5 случайных крестьян с вилами",
+                    "Проклятие бюрократии – враг теряет ход, заполняя бумаги",
+                    "Критическая удача – следующая атака автоматически критует, но после этого игрок падает",
+                    "Гильотина из кармана – внезапно падает гильотина (50% шанс попасть)",
+                    "Спортивная злость – бьёт врага кулаком, крича 'Это за наш футбол!'"
+                ],
+                defensive: [
+                    "Крестьянская смекалка – подставляет под удар ближайшего союзника (незаметно)",
+                    "Щит из хлеба – блокирует удар, но потом можно съесть",
+                    "Дипломатический иммунитет – враги пропускают ход, думая, что это ошибка",
+                    "Народное ополчение – случайные NPC встают на защиту",
+                    "Священная ругань – кричит так грязно, что враги теряют концентрацию"
+                ],
+                healing: [
+                    "Крепкий самогон – лечит 50% HP, но снижает интеллект",
+                    "Банка с пиявками – старинный метод (+HP, но выглядит жутко)",
+                    "Мотивационная речь – восстанавливает ману, но все должны выслушать",
+                    "Подорожник и божья воля – 50% шанс вылечить или ухудшить состояние",
+                    "Срочная ампутация – отрезает повреждённую часть тела, останавливая кровотечение"
+                ]
+            }
+        };
+        
+        // Данные инвентаря
+        const inventoryData = {
+            armor: [
+                {
+                    name: "Доспех 'Костяной Танк'",
+                    description: "Тип: Тяжёлая броня (из костей дракона)\nЭффект: +2 к КД, но если урона больше 20 за удар — трескается."
+                },
+                {
+                    name: "Плащ 'Тень Ворона'",
+                    description: "Тип: Лёгкая (тень)\nЭффект: +5 к скрытности, но в солнечный свете превращается в обычную ткань."
+                },
+                {
+                    name: "Кольчуга 'Громовой Отклик'",
+                    description: "Тип: Средняя\nЭффект: При ударе молнией возвращает 50% урона атакующему."
+                },
+                {
+                    name: "Доспех 'Живая Сталь'",
+                    description: "Тип: Тяжёлая\nЭффект: Самозатягивается, но требует 'питания' (1 кровь/день)."
+                },
+                {
+                    name: "Рубаха 'Вечного Пьянства'",
+                    description: "Тип: Лёгкая\nЭффект: +1 к КД за каждую выпитую кружку пива (макс. +3)."
+                },
+                {
+                    name: "Щит 'Зеркало Дурака'",
+                    description: "Тип: Щит\nЭффект: 10% шанс отразить заклинание обратно в кастера."
+                },
+                {
+                    name: "Кожаный Доспех 'Говорящий Ужас'",
+                    description: "Тип: Средняя\nЭффект: Иногда шепчет проклятия, пугая врагов (-1 к их атаке)."
+                },
+                {
+                    name: "Латы 'Гнев Титана'",
+                    description: "Тип: Тяжёлая\nЭффект: +3 к КД, но -2 к ловкости (очень громоздкие)."
+                },
+                {
+                    name: "Мантия 'Фазового Кота'",
+                    description: "Тип: Лёгкая\nЭффект: 1 раз в день можно пройти сквозь стену (но иногда застреваешь)."
+                },
+                {
+                    name: "Доспех 'Проклятый Наёмник'",
+                    description: "Тип: Любая\nЭффект: +2 к КД, но если снять — получаешь -2 ко всему на день."
+                },
+                {
+                    name: "Панцирь 'Железной Черепахи'",
+                    description: "Тип: Тяжёлая\nЭффект: +4 к КД, но скорость падает до 5 фт./ход."
+                },
+                {
+                    name: "Плащ 'Бездонного Кармана'",
+                    description: "Тип: Лёгкая\nЭффект: +2 слота для предметов, но иногда вещи пропадают."
+                },
+                {
+                    name: "Кольчуга 'Змеиной Кожи'",
+                    description: "Тип: Средняя\nЭффект: Иммунитет к ядам, но боится огня."
+                },
+                {
+                    name: "Доспех 'Каменного Идиота'",
+                    description: "Тип: Тяжёлая\nЭффект: +3 к КД, но -2 к интеллекту (тяжело думать)."
+                },
+                {
+                    name: "Накидка 'Призрачного Шёпота'",
+                    description: "Тип: Лёгкая\nЭффект: Невидимость в тени, но если в тебя врезаются — эффект спадает."
+                },
+                {
+                    name: "Щит 'Дверь Таверны'",
+                    description: "Тип: Щит\nЭффект: +2 к КД, можно использовать как барную стойку."
+                },
+                {
+                    name: "Броня 'Кипящей Крови'",
+                    description: "Тип: Средняя\nЭффект: При ударе враг получает 1d6 урона паром."
+                },
+                {
+                    name: "Доспех 'Вечного Начинающего'",
+                    description: "Тип: Любая\nЭффект: +1 к КД за каждые 5 уровней ниже 10."
+                },
+                {
+                    name: "Плащ 'Лунного Света'",
+                    description: "Тип: Лёгкая\nЭффект: Ночью даёт +2 к скрытности, днём — светится."
+                },
+                {
+                    name: "Латы 'Последнего Стояния'",
+                    description: "Тип: Тяжёлая\nЭффект: Если HP падает до 0, остаёшься с 1 HP (1 раз в день)."
+                }
+            ],
+            weapons: [
+                {
+                    name: "Меч 'Пьяный Мастер'",
+                    description: "Тип: Длинный меч\nЭффект: Криты на 19-20, но если промахнулся — падаешь."
+                },
+                {
+                    name: "Лук 'Стрела Судьбы'",
+                    description: "Тип: Дальний\nЭффект: 1 раз в день попадает автоматически, но куда — решает ГМ."
+                },
+                {
+                    name: "Молот 'Гномьей Ярости'",
+                    description: "Тип: Двуручный\nЭффект: +2 к урону по конструкциям, но -1 к атаке."
+                },
+                {
+                    name: "Кинжал 'Шёпот Тени'",
+                    description: "Тип: Лёгкий\nЭффект: +3 к урону при атаке из скрытности, но светится в темноте."
+                },
+                {
+                    name: "Посох 'Безумного Алхимика'",
+                    description: "Тип: Магический\nЭффект: Превращает зелья в аое-эффекты (но может взорваться)."
+                },
+                {
+                    name: "Топор 'Вечного Возврата'",
+                    description: "Тип: Одноручный\nЭффект: Если промахнулся — возвращается в руку."
+                },
+                {
+                    name: "Арбалет 'Сто Стрел'",
+                    description: "Тип: Дальний\nЭффект: Можно выстрелить 3 раза за ход, но потом он ломается."
+                },
+                {
+                    name: "Меч 'Проклятие Короля'",
+                    description: "Тип: Двуручный\nЭффект: +3 к урону, но каждый удар сокращает жизнь на 1 день."
+                },
+                {
+                    name: "Цеп 'Голодная Змея'",
+                    description: "Тип: Гибкое\nЭффект: Иногда кусает врага (яд 1d6), иногда — владельца."
+                },
+                {
+                    name: "Молот 'Громовой Рык'",
+                    description: "Тип: Двуручный\nЭффект: При ударе оглушает всех в радиусе 10 фт. (включая союзников)."
+                },
+                {
+                    name: "Коса 'Жнеца'",
+                    description: "Тип: Двуручная\nЭффект: Криты на 19-20, но после убийства требует жертву."
+                },
+                {
+                    name: "Копьё 'Последнего Шанса'",
+                    description: "Тип: Дальний/Ближний\nЭффект: Если бросок атаки 1 — ломается, если 20 — убивает мгновенно."
+                },
+                {
+                    name: "Нож 'Карманного Демона'",
+                    description: "Тип: Лёгкий\nЭффект: +2 к урону, но иногда шепчет владельцу злые мысли."
+                },
+                {
+                    name: "Лук 'Лунного Света'",
+                    description: "Тип: Дальний\nЭффект: Стрелы светятся, но днём урон снижен."
+                },
+                {
+                    name: "Меч 'Рыцаря-Призрака'",
+                    description: "Тип: Длинный\nЭффект: Может проходить сквозь доспехи, но 10% шанс ударить себя."
+                },
+                {
+                    name: "Кувалда 'Землетрясения'",
+                    description: "Тип: Двуручная\nЭффект: Каждый удар вызывает тряску (враги могут упасть)."
+                },
+                {
+                    name: "Кинжалы 'Близнецы-Убийцы'",
+                    description: "Тип: Парные\nЭффект: Если атаковать обоими — +1d6 урона, но можно перепутать руки."
+                },
+                {
+                    name: "Арбалет 'Чёрная Вдова'",
+                    description: "Тип: Дальний\nЭффект: Яд (1d8), но если промах — паук вылезает и кусает тебя."
+                },
+                {
+                    name: "Молот 'Вечеринки Гномов'",
+                    description: "Тип: Одноручный\nЭффект: При ударе раздаётся смех (-1 к концентрации врагов)."
+                },
+                {
+                    name: "Клинок 'Последнего Вдоха'",
+                    description: "Тип: Короткий меч\nЭффект: Если убивает врага — восстанавливает 1d6 HP."
+                }
+            ],
+            items: [
+                {
+                    name: "Кольцо 'Ложной Смерти'",
+                    description: "Эффект: При смертельном ударе падаешь как мёртвый (1 раз)."
+                },
+                {
+                    name: "Зелье 'Обратного Действия'",
+                    description: "Эффект: Даёт случайный эффект (может быть ядом или лечением)."
+                },
+                {
+                    name: "Карта 'Бесконечного Лабиринта'",
+                    description: "Эффект: Показывает путь, но иногда врёт."
+                },
+                {
+                    name: "Сапоги 'Семимильных Шагов'",
+                    description: "Эффект: Удваивают скорость, но 5% шанс споткнуться."
+                },
+                {
+                    name: "Свиток 'Дикой Магии'",
+                    description: "Эффект: Кастует случайное заклинание (от 'Огненного шара' до 'Превращения в курицу')."
+                },
+                {
+                    name: "Мешок 'Дерущегося Гоблина'",
+                    description: "Эффект: Можно вытащить гоблина (50% друг, 50% враг)."
+                },
+                {
+                    name: "Очки 'Истинного Видения'",
+                    description: "Эффект: Видишь невидимое, но и страшные вещи тоже."
+                },
+                {
+                    name: "Камень 'Говорящей Глупости'",
+                    description: "Эффект: Отвечает на вопросы, но только ерундой."
+                },
+                {
+                    name: "Фляга 'Бесконечного Пива'",
+                    description: "Эффект: Пиво не кончается, но если перевернуть — хлещет фонтан."
+                },
+                {
+                    name: "Книга 'Спящего Дракона'",
+                    description: "Эффект: Если читать вслух — может разбудить дракона (где-то)."
+                },
+                {
+                    name: "Зеркало 'Другого Я'",
+                    description: "Эффект: Показывает альтернативную версию себя."
+                },
+                {
+                    name: "Кукла Вуду 'Случайного Человека'",
+                    description: "Эффект: Можно проклясть кого-то, но кто — неизвестно."
+                },
+                {
+                    name: "Браслет 'Невидимых Оков'",
+                    description: "Эффект: Делает руки невидимыми (удобно для краж)."
+                },
+                {
+                    name: "Кубок 'Вечной Жажды'",
+                    description: "Эффект: В нём всегда есть жидкость, но какая — загадка."
+                },
+                {
+                    name: "Свисток 'Призыва Крыс'",
+                    description: "Эффект: Созывает 1d20 крыс (дружелюбных или нет)."
+                },
+                {
+                    name: "Перо 'Правды'",
+                    description: "Эффект: Пишет только правду, даже если не хочешь."
+                },
+                {
+                    name: "Гриб 'Воспоминаний'",
+                    description: "Эффект: Показывает случайное воспоминание (не факт, что твоё)."
+                },
+                {
+                    name: "Камень 'Притяжения Неприятностей'",
+                    description: "Эффект: Враг всегда атакует его носителя."
+                },
+                {
+                    name: "Кольцо 'Мимолётной Популярности'",
+                    description: "Эффект: Все NPC любят тебя... но только на 10 минут."
+                },
+                {
+                    name: "Сундук 'Мимолётного Богатства'",
+                    description: "Эффект: В нём есть золото, но оно исчезает через час."
+                }
+            ]
+        };
+        
+        // Выбранные способности
+        const selectedAbilities = {
+            attacking: [],
+            defensive: [],
+            healing: []
+        };
+        
+        // Выбранные предметы
+        const selectedItems = {
+            armor: null,
+            weapon: null,
+            items: []
+        };
+        
+        // Навигация по шагам
+        function goToStep(stepNumber) {
+            document.querySelectorAll('.creation-step').forEach(step => {
+                step.classList.remove('active');
+            });
+            document.getElementById(`step${stepNumber}`).classList.add('active');
+            
+            document.querySelectorAll('.step').forEach(step => {
+                step.classList.remove('active', 'completed');
+            });
+            
+            for (let i = 1; i <= 5; i++) {
+                const stepElement = document.querySelector(`.step[data-step="${i}"]`);
+                if (i < stepNumber) {
+                    stepElement.classList.add('completed');
+                } else if (i === stepNumber) {
+                    stepElement.classList.add('active');
+                }
+            }
+            
+            if (stepNumber === 2) {
+                updateAbilitySelects();
+            } else if (stepNumber === 3) {
+                initArmorSelection();
+            } else if (stepNumber === 4) {
+                initWeaponSelection();
+            } else if (stepNumber === 5) {
+                initItemSelection();
+            }
+        }
+        
+        // Обработчики кнопок навигации
+        document.getElementById('nextToStep2').addEventListener('click', function() {
+            goToStep(2);
+        });
+        
+        document.getElementById('backToStep1').addEventListener('click', function() {
+            goToStep(1);
+        });
+        
+        document.getElementById('nextToStep3').addEventListener('click', function() {
+            goToStep(3);
+        });
+        
+        document.getElementById('backToStep2').addEventListener('click', function() {
+            goToStep(2);
+        });
+        
+        document.getElementById('nextToStep4').addEventListener('click', function() {
+            goToStep(4);
+        });
+        
+        document.getElementById('backToStep3').addEventListener('click', function() {
+            goToStep(3);
+        });
+        
+        document.getElementById('nextToStep5').addEventListener('click', function() {
+            goToStep(5);
+        });
+        
+        document.getElementById('backToStep4').addEventListener('click', function() {
+            goToStep(4);
+        });
+        
+        document.querySelectorAll('.step').forEach(step => {
+            step.addEventListener('click', function() {
+                const stepNumber = parseInt(this.getAttribute('data-step'));
+                goToStep(stepNumber);
+            });
+        });
+        
+        // Обновление выбора способностей при изменении расы
+        function updateAbilitySelects() {
+            const race = document.getElementById('characterRace').value;
+            
+            // Атакующие способности
+            const attackingSelect = document.getElementById('attackingAbilities');
+            attackingSelect.innerHTML = '';
+            abilities[race].attacking.forEach((ability, index) => {
+                const button = document.createElement('button');
+                button.className = 'ability-button';
+                button.textContent = ability;
+                button.dataset.type = 'attacking';
+                button.dataset.index = index;
+                button.addEventListener('click', function() {
+                    toggleAbilitySelection(this);
+                });
+                attackingSelect.appendChild(button);
+            });
+            
+            // Защитные способности
+            const defensiveSelect = document.getElementById('defensiveAbilities');
+            defensiveSelect.innerHTML = '';
+            abilities[race].defensive.forEach((ability, index) => {
+                const button = document.createElement('button');
+                button.className = 'ability-button';
+                button.textContent = ability;
+                button.dataset.type = 'defensive';
+                button.dataset.index = index;
+                button.addEventListener('click', function() {
+                    toggleAbilitySelection(this);
+                });
+                defensiveSelect.appendChild(button);
+            });
+            
+            // Лечащие способности
+            const healingSelect = document.getElementById('healingAbilities');
+            healingSelect.innerHTML = '';
+            abilities[race].healing.forEach((ability, index) => {
+                const button = document.createElement('button');
+                button.className = 'ability-button';
+                button.textContent = ability;
+                button.dataset.type = 'healing';
+                button.dataset.index = index;
+                button.addEventListener('click', function() {
+                    toggleAbilitySelection(this);
+                });
+                healingSelect.appendChild(button);
+            });
+            
+            // Сброс сообщений о лимите
+            document.getElementById('attackingLimit').classList.add('hidden');
+            document.getElementById('defensiveLimit').classList.add('hidden');
+            document.getElementById('healingLimit').classList.add('hidden');
+            
+            // Обновление выбранных способностей
+            selectedAbilities.attacking = [];
+            selectedAbilities.defensive = [];
+            selectedAbilities.healing = [];
+        }
+        
+        // Переключение выбора способности
+        function toggleAbilitySelection(button) {
+            const type = button.dataset.type;
+            const index = parseInt(button.dataset.index);
+            const race = document.getElementById('characterRace').value;
+            const ability = abilities[race][type][index];
+            
+            const limit = type === 'attacking' ? 2 : 1;
+            
+            // Проверяем, выбрана ли уже эта способность
+            const abilityIndex = selectedAbilities[type].indexOf(ability);
+            
+            if (abilityIndex === -1) {
+                // Если не выбрана, добавляем (если не превышен лимит)
+                if (selectedAbilities[type].length < limit) {
+                    selectedAbilities[type].push(ability);
+                    button.classList.add('selected');
+                }
+            } else {
+                // Если уже выбрана, удаляем
+                selectedAbilities[type].splice(abilityIndex, 1);
+                button.classList.remove('selected');
+            }
+            
+            // Обновляем состояние кнопок
+            updateAbilityButtonsState(type, limit);
+        }
+        
+        // Обновление состояния кнопок способностей
+        function updateAbilityButtonsState(type, limit) {
+            const buttons = document.querySelectorAll(`.ability-button[data-type="${type}"]`);
+            const selectedCount = selectedAbilities[type].length;
+            const limitElement = document.getElementById(`${type}Limit`);
+            
+            if (selectedCount >= limit) {
+                limitElement.classList.remove('hidden');
+                buttons.forEach(button => {
+                    if (!button.classList.contains('selected')) {
+                        button.classList.add('limit-reached');
+                    }
+                });
+            } else {
+                limitElement.classList.add('hidden');
+                buttons.forEach(button => {
+                    button.classList.remove('limit-reached');
+                });
+            }
+        }
+        
+        // Инициализация выбора брони
+        function initArmorSelection() {
+            const armorSelect = document.getElementById('armorSelection');
+            armorSelect.innerHTML = '';
+            inventoryData.armor.forEach((item, index) => {
+                const button = document.createElement('button');
+                button.className = 'item-button';
+                button.textContent = item.name;
+                button.dataset.type = 'armor';
+                button.dataset.index = index;
+                button.addEventListener('click', function() {
+                    toggleItemSelection(this);
+                });
+                
+                const desc = document.createElement('div');
+                desc.className = 'item-description';
+                desc.textContent = item.description;
+                
+                armorSelect.appendChild(button);
+                armorSelect.appendChild(desc);
+                
+                // Выделяем уже выбранный предмет
+                if (selectedItems.armor && selectedItems.armor.name === item.name) {
+                    button.classList.add('selected');
+                    desc.style.display = 'block';
+                }
+            });
+        }
+        
+        // Инициализация выбора оружия
+        function initWeaponSelection() {
+            const weaponSelect = document.getElementById('weaponSelection');
+            weaponSelect.innerHTML = '';
+            inventoryData.weapons.forEach((item, index) => {
+                const button = document.createElement('button');
+                button.className = 'item-button';
+                button.textContent = item.name;
+                button.dataset.type = 'weapon';
+                button.dataset.index = index;
+                button.addEventListener('click', function() {
+                    toggleItemSelection(this);
+                });
+                
+                const desc = document.createElement('div');
+                desc.className = 'item-description';
+                desc.textContent = item.description;
+                
+                weaponSelect.appendChild(button);
+                weaponSelect.appendChild(desc);
+                
+                // Выделяем уже выбранный предмет
+                if (selectedItems.weapon && selectedItems.weapon.name === item.name) {
+                    button.classList.add('selected');
+                    desc.style.display = 'block';
+                }
+            });
+        }
+        
+        // Инициализация выбора предметов
+        function initItemSelection() {
+            const itemSelect = document.getElementById('itemSelection');
+            itemSelect.innerHTML = '';
+            inventoryData.items.forEach((item, index) => {
+                const button = document.createElement('button');
+                button.className = 'item-button';
+                button.textContent = item.name;
+                button.dataset.type = 'items';
+                button.dataset.index = index;
+                button.addEventListener('click', function() {
+                    toggleItemSelection(this);
+                });
+                
+                const desc = document.createElement('div');
+                desc.className = 'item-description';
+                desc.textContent = item.description;
+                
+                itemSelect.appendChild(button);
+                itemSelect.appendChild(desc);
+                
+                // Выделяем уже выбранные предметы
+                if (selectedItems.items.some(i => i.name === item.name)) {
+                    button.classList.add('selected');
+                    desc.style.display = 'block';
+                }
+            });
+            
+            // Обновляем состояние кнопок предметов
+            updateItemButtonsState();
+        }
+        
+        // Переключение выбора предмета
+        function toggleItemSelection(button) {
+            const type = button.dataset.type;
+            const index = parseInt(button.dataset.index);
+            
+            if (type === 'armor' || type === 'weapon') {
+                // Снимаем выделение с других кнопок этого типа
+                document.querySelectorAll(`.item-button[data-type="${type}"]`).forEach(btn => {
+                    btn.classList.remove('selected');
+                    btn.nextElementSibling.style.display = 'none';
+                });
+                
+                // Выделяем текущую кнопку
+                button.classList.add('selected');
+                button.nextElementSibling.style.display = 'block';
+                
+                // Сохраняем выбор
+                selectedItems[type] = inventoryData[type === 'armor' ? 'armor' : 'weapons'][index];
+            } 
+            else if (type === 'items') {
+                const item = inventoryData.items[index];
+                const itemIndex = selectedItems.items.findIndex(i => i.name === item.name);
+                
+                if (itemIndex === -1) {
+                    // Если предмет не выбран и не достигнут лимит
+                    if (selectedItems.items.length < 3) {
+                        selectedItems.items.push(item);
+                        button.classList.add('selected');
+                        button.nextElementSibling.style.display = 'block';
+                    }
+                } else {
+                    // Если предмет уже выбран - снимаем выбор
+                    selectedItems.items.splice(itemIndex, 1);
+                    button.classList.remove('selected');
+                    button.nextElementSibling.style.display = 'none';
+                }
+                
+                // Обновляем состояние кнопок
+                updateItemButtonsState();
+            }
+        }
+        
+        // Обновление состояния кнопок предметов
+        function updateItemButtonsState() {
+            const limitElement = document.getElementById('itemLimit');
+            
+            if (selectedItems.items.length >= 3) {
+                limitElement.classList.remove('hidden');
+                document.querySelectorAll('.item-button[data-type="items"]:not(.selected)').forEach(button => {
+                    button.classList.add('limit-reached');
+                });
+            } else {
+                limitElement.classList.add('hidden');
+                document.querySelectorAll('.item-button[data-type="items"]').forEach(button => {
+                    button.classList.remove('limit-reached');
+                });
+            }
+        }
+        
+        // Создание карточки
+        document.getElementById('generateCard').addEventListener('click', function() {
+            // Основная информация
+            document.getElementById('previewName').textContent = 
+                document.getElementById('characterName').value || 'Безымянный герой';
+            
+            const race = document.getElementById('characterRace').value;
+            const raceNames = {
+                elf: 'Эльф',
+                dwarf: 'Дворф',
+                orc: 'Орк',
+                human: 'Человек'
+            };
+            
+            document.getElementById('previewRace').textContent = raceNames[race];
+            
+            // История
+            const background = document.getElementById('characterBackground').value;
+            document.getElementById('previewBackground').textContent = 
+                background || 'История персонажа не указана';
+            
+            // Способности
+            const previewAttacking = document.getElementById('previewAttackingAbilities');
+            previewAttacking.innerHTML = '';
+            if (selectedAbilities.attacking.length > 0) {
+                selectedAbilities.attacking.forEach(ability => {
+                    const div = document.createElement('div');
+                    div.className = 'ability-item';
+                    div.textContent = ability;
+                    previewAttacking.appendChild(div);
+                });
+            } else {
+                previewAttacking.innerHTML = '<div class="ability-item">Не выбраны</div>';
+            }
+            
+            const previewDefensive = document.getElementById('previewDefensiveAbilities');
+            previewDefensive.innerHTML = '';
+            if (selectedAbilities.defensive.length > 0) {
+                selectedAbilities.defensive.forEach(ability => {
+                    const div = document.createElement('div');
+                    div.className = 'ability-item';
+                    div.textContent = ability;
+                    previewDefensive.appendChild(div);
+                });
+            } else {
+                previewDefensive.innerHTML = '<div class="ability-item">Не выбраны</div>';
+            }
+            
+            const previewHealing = document.getElementById('previewHealingAbilities');
+            previewHealing.innerHTML = '';
+            if (selectedAbilities.healing.length > 0) {
+                selectedAbilities.healing.forEach(ability => {
+                    const div = document.createElement('div');
+                    div.className = 'ability-item';
+                    div.textContent = ability;
+                    previewHealing.appendChild(div);
+                });
+            } else {
+                previewHealing.innerHTML = '<div class="ability-item">Не выбраны</div>';
+            }
+            
+            // Броня
+            const previewArmor = document.getElementById('previewArmor');
+            previewArmor.innerHTML = '';
+            if (selectedItems.armor) {
+                const div = document.createElement('div');
+                div.className = 'ability-item';
+                div.textContent = `${selectedItems.armor.name}: ${selectedItems.armor.description}`;
+                previewArmor.appendChild(div);
+            } else {
+                previewArmor.innerHTML = '<div class="ability-item">Не указана</div>';
+            }
+            
+            // Оружие
+            const previewWeapons = document.getElementById('previewWeapons');
+            previewWeapons.innerHTML = '';
+            if (selectedItems.weapon) {
+                const div = document.createElement('div');
+                div.className = 'ability-item';
+                div.textContent = `${selectedItems.weapon.name}: ${selectedItems.weapon.description}`;
+                previewWeapons.appendChild(div);
+            } else {
+                previewWeapons.innerHTML = '<div class="ability-item">Не указано</div>';
+            }
+            
+            // Предметы
+            const previewItems = document.getElementById('previewItems');
+            previewItems.innerHTML = '';
+            if (selectedItems.items.length > 0) {
+                selectedItems.items.forEach(item => {
+                    const div = document.createElement('div');
+                    div.className = 'ability-item';
+                    div.textContent = `${item.name}: ${item.description}`;
+                    previewItems.appendChild(div);
+                });
+            } else {
+                previewItems.innerHTML = '<div class="ability-item">Пусто</div>';
+            }
+            
+            // Показать кнопки экспорта
+            document.getElementById('savePNG').style.display = 'block';
+            document.getElementById('savePDF').style.display = 'block';
+        });
+        
+        // Сохранение в PNG
+        document.getElementById('savePNG').addEventListener('click', function() {
+            const cardElement = document.getElementById('cardContent');
+            
+            html2canvas(cardElement).then(canvas => {
+                const link = document.createElement('a');
+                link.download = 'dnd_character.png';
+                link.href = canvas.toDataURL('image/png');
+                link.click();
+            });
+        });
+        
+        // Сохранение в PDF
+        document.getElementById('savePDF').addEventListener('click', function() {
+            const cardElement = document.getElementById('cardContent');
+            
+            html2canvas(cardElement).then(canvas => {
+                const imgData = canvas.toDataURL('image/png');
+                const pdf = new jspdf.jsPDF({
+                    orientation: 'portrait',
+                    unit: 'mm'
+                });
+                
+                // Рассчитываем размеры для PDF
+                const imgWidth = 105; // A6 ширина в мм
+                const pageHeight = 148; // A6 высота в мм
+                const imgHeight = canvas.height * imgWidth / canvas.width;
+                
+                pdf.addImage(imgData, 'PNG', 0, 0, imgWidth, imgHeight);
+                pdf.save('dnd_character.pdf');
+            });
+        });
+        
+        // Инициализация при загрузке страницы
+        document.addEventListener('DOMContentLoaded', function() {
+            updateAbilitySelects();
+        });
+    </script>
+</body>
+</html>
